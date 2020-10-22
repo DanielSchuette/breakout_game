@@ -11,7 +11,8 @@
 class Context {
     SDL_Window*     window     = nullptr;
     SDL_Renderer*   renderer   = nullptr;
-    TTF_Font*       font       = nullptr;
+    TTF_Font*       font24     = nullptr;
+    TTF_Font*       font36     = nullptr;
     const char*     title      = "Breakout";
     const uint32_t  win_x_pos  = SDL_WINDOWPOS_CENTERED;
     const uint32_t  win_y_pos  = SDL_WINDOWPOS_CENTERED;
@@ -23,7 +24,7 @@ public:
     Context(void);
     ~Context(void);
 
-    void draw_text(const std::string&, const SDL_Color&, uint32_t, uint32_t);
+    void draw_text(const std::string&, const SDL_Color&, uint32_t, uint32_t, uint8_t = 24);
     void draw_rectangle(const SDL_Color&, const SDL_Rect& rect);
     void draw_circle(const SDL_Color&, const shapes::Circle&);
     void clear_renderer(SDL_Color = { 180, 180, 180, 255 });
@@ -34,8 +35,9 @@ public:
     uint32_t      get_height(void) const   { return win_height; }
     uint32_t      get_width(void) const    { return win_width; }
     SDL_Renderer* get_renderer(void) const { return renderer; }
-    TTF_Font*     get_font(void) const     { return font; }
     void          render_present(void)     { SDL_RenderPresent(renderer); }
+
+    TTF_Font*     get_font(uint8_t = 24) const;
 };
 
 #endif /* _CONTEXT_H_ */

@@ -7,6 +7,11 @@
 #include "context.hh"
 #include "shapes.hh"
 
+class Game;
+struct Player;
+struct Ball;
+struct Block;
+
 struct Player {
 private:
     SDL_Rect rect;
@@ -23,11 +28,14 @@ public:
 struct Ball {
 private:
     shapes::Circle circle;
-    int32_t        xdir = 1, ydir = 1;
+    int32_t        xdir = 2, ydir = 3;
 public:
     Ball(int32_t x, int32_t y, int32_t w) : circle({ x, y, w }) {}
 
-    void           update(void);
+    void update(void);
+    bool collides_with(Player);
+    bool collides_with(Block);
+
     shapes::Circle get_circle(void) const  { return circle; }
 };
 
@@ -52,6 +60,9 @@ class Game {
     const uint8_t      xoffset = 10;
     uint32_t           current_fps = 0;
     bool               is_paused = false;
+
+    enum game_state { START, PLAYING, LOST };
+    game_state         state = START;
 public:
     enum direction { LEFT, RIGHT };
 

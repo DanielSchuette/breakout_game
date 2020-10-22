@@ -15,8 +15,13 @@ namespace shapes {
         Circle(int32_t x, int32_t y, int32_t w) : x(x), y(y), w(w) {}
 
         void render(SDL_Renderer*) const;
+        void render1(SDL_Renderer*) const;
+
         void update_x(int32_t x) { this->x += x; };
         void update_y(int32_t y) { this->y += y; };
+        int32_t get_x(void)      { return this->x; }
+        int32_t get_y(void)      { return this->y; }
+        int32_t get_width(void)  { return this->w; }
     };
 }
 

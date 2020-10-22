@@ -31,15 +31,18 @@ Context::Context(void)
     renderer = SDL_CreateRenderer(window, -1, render_flags);
     if (!renderer) quit_on_error(SDL_GetError());
 
-    font = TTF_OpenFont("./assets/fonts/OpenSans-Bold.ttf", 24);
-    if (!font) quit_on_error(TTF_GetError());
+    font24 = TTF_OpenFont("./assets/fonts/OpenSans-Bold.ttf", 24);
+    if (!font24) quit_on_error(TTF_GetError());
+    font36 = TTF_OpenFont("./assets/fonts/OpenSans-Bold.ttf", 36);
+    if (!font36) quit_on_error(TTF_GetError());
 }
 
 Context::~Context(void)
 {
     if (window)   SDL_DestroyWindow(window);
     if (renderer) SDL_DestroyRenderer(renderer);
-    if (font)     TTF_CloseFont(font);
+    if (font24)   TTF_CloseFont(font24);
+    if (font36)   TTF_CloseFont(font36);
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
@@ -79,9 +82,16 @@ void Context::draw_circle(const SDL_Color& color, const shapes::Circle& circ)
  * The standard font set for this context is used.
  */
 void Context::draw_text(const std::string& text, const SDL_Color& color,
-                        uint32_t x, uint32_t y)
+                        uint32_t x, uint32_t y, uint8_t fontsize)
 {
-    SDL_Surface* sf = TTF_RenderText_Solid(font, text.c_str(), color);
+    // TODO: surface and texture error checking
+    SDL_Surface* sf;
+    if (fontsize == 24)
+        sf = TTF_RenderText_Solid(font24, text.c_str(), color);
+    else if (fontsize == 36)
+        sf = TTF_RenderText_Solid(font36, text.c_str(), color);
+    else
+        quit_on_error("invalid font size specified");
     SDL_Texture* tx = SDL_CreateTextureFromSurface(renderer, sf);
 
     SDL_Rect r;
@@ -100,4 +110,12 @@ void Context::draw_text(const std::string& text, const SDL_Color& color,
 void Context::copy_texture_to_renderer(SDL_Texture* texture, SDL_Rect* dest)
 {
     SDL_RenderCopy(renderer, texture, NULL, dest);
+}
+
+
+TTF_Font* Context::get_font(uint8_t fontsize) const
+{
+    if (fontsize == 24)      return font24;
+    else if (fontsize == 36) return font36;
+    return nullptr;
 }
