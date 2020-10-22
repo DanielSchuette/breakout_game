@@ -1,0 +1,5 @@
+*.o
+*.d
+assets/
+breakout
+tags
