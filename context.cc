@@ -26,10 +26,12 @@ Context::Context(void)
     /* Enabling vsync should limit the framerate to whatever the video card is
      * capable of. It's still good practice to limit the frame rate in the
      * game's main loop.
+     * NOTE: Maybe, enabling alpha blending globally is bad?
      */
-    uint32_t render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
+    uint32_t render_flags = SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC;
     renderer = SDL_CreateRenderer(window, -1, render_flags);
     if (!renderer) quit_on_error(SDL_GetError());
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     font24 = TTF_OpenFont("./assets/fonts/OpenSans-Bold.ttf", 24);
     if (!font24) quit_on_error(TTF_GetError());

@@ -30,6 +30,7 @@ public:
     void clear_renderer(SDL_Color = { 180, 180, 180, 255 });
 
     [[noreturn]] void quit_on_error(const char*) const;
+    [[noreturn]] void quit_on_success(int code) const { exit(code); }
 
     SDL_Window*   get_window(void) const   { return window; }
     uint32_t      get_height(void) const   { return win_height; }

@@ -5,8 +5,8 @@
 
 #include "game.hh"
 
-const uint32_t fps = 60;
-const uint32_t ms_per_frame = 1000 / fps;
+static const uint32_t fps = 60;
+static const uint32_t ms_per_frame = 1000 / fps;
 
 void usage(void)
 {
@@ -60,14 +60,17 @@ int main(int argc, char** argv)
                     case SDL_SCANCODE_P:
                         game.toggle_pause();
                         break;
+                    case SDL_SCANCODE_SPACE:
+                        game.start();
+                        break;
                     default:
-                        // do nothing
+                        game.key_press();
+                        game.start_ball();
                         break;
                     }
                 }
                 break;
             default:
-                // do nothing
                 break;
             }
         }
@@ -78,8 +81,10 @@ int main(int argc, char** argv)
         uint32_t end_time = SDL_GetTicks();
         uint32_t delta = end_time - start_time;
         current_fps = 1000 / (delta > 0 ? delta : 1);
-        if (delta < ms_per_frame)
+        if (delta < ms_per_frame) {
             SDL_Delay(ms_per_frame - delta);
+            current_fps = 60;
+        }
     }
 
     return 0;

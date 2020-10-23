@@ -19,15 +19,19 @@ public:
     Player(int32_t x, int32_t y, int32_t w, int32_t h)
         : rect({ x, y, w, h }) {}
 
-    int32_t  get_xpos(void) const  { return rect.x; }
-    void     set_xpos(int32_t x)   { rect.x = x; }
-    int32_t  get_width(void) const { return rect.w; }
-    SDL_Rect get_rect(void) const  { return rect; }
+    void     set_ypos(int32_t y)    { rect.y = y; }
+    void     set_xpos(int32_t x)    { rect.x = x; }
+    int32_t  get_xpos(void) const   { return rect.x; }
+    int32_t  get_ypos(void) const   { return rect.y; }
+    int32_t  get_width(void) const  { return rect.w; }
+    int32_t  get_height(void) const { return rect.h; }
+    SDL_Rect get_rect(void) const   { return rect; }
 };
 
 struct Ball {
 private:
     shapes::Circle circle;
+    bool           started = false;
     int32_t        xdir = 2, ydir = 3;
 public:
     Ball(int32_t x, int32_t y, int32_t w) : circle({ x, y, w }) {}
@@ -35,20 +39,28 @@ public:
     void update(void);
     bool collides_with(Player);
     bool collides_with(Block);
+    bool collides_with_wall(void);
 
+    void           start(void)             { started = true; }
     shapes::Circle get_circle(void) const  { return circle; }
+    void           set_xdir(int32_t x)     { xdir = x; }
+    void           set_ydir(int32_t y)     { ydir = y; }
+    int32_t        get_xdir(void)          { return xdir; }
+    int32_t        get_ydir(void)          { return ydir; }
 };
 
 struct Block {
 private:
     SDL_Rect rect;
-    uint8_t strength; // how often we need to hit this block to for it disappear
+    uint8_t  strength;       // how often it needs to be hit to disappear
+    bool     indestructable; // this block never disappears
 public:
     Block(int32_t x, int32_t y, int32_t w, int32_t h, int8_t s)
         : rect({ x, y, w, h }), strength(s) {}
 
-    int8_t   get_strength(void) const { return strength; }
-    SDL_Rect get_rect(void) const     { return rect; }
+    int8_t   get_strength(void) const      { return strength; }
+    bool     is_indestructable(void) const { return indestructable; }
+    SDL_Rect get_rect(void) const          { return rect; }
 };
 
 class Game {
@@ -73,8 +85,13 @@ public:
     void update(void);
     void update_x(direction);
     void detect_ball_collision(void);
+    void key_press(void);
+    bool is_still_running(void);
 
-    void update_current_fps(uint32_t fps) { current_fps = fps; }
+    game_state get_game_state(void)             { return state; }
+    void       update_current_fps(uint32_t fps) { current_fps = fps; }
+    void       start(void)                      { state = Game::PLAYING; }
+    void       start_ball(void)                 { ball.start(); }
 };
 
 #endif /* _GAME_H_ */
