@@ -15,6 +15,7 @@ static T max(const T& a, const T& b) { return (a >= b) ? a : b; }
 
 static const SDL_Color blue  = { 37, 26, 239, 255 };
 static const SDL_Color red   = { 170, 10, 20, 255 };
+static const SDL_Color green = { 15, 222, 47, 255 };
 static const SDL_Color black = { 15, 15, 15, 255 };
 
 static const Player default_player = { 40, 650, 150, 20 };
@@ -56,9 +57,12 @@ void Game::render(void)
         for (const Block& block: blocks) {
             uint8_t strength = block.get_strength();
             uint8_t alpha;
-            if (strength > 6)      alpha = 255;
-            else if (strength > 4) alpha = 210;
-            else if (strength > 2) alpha = 140;
+            if (strength > 7)      alpha = 255;
+            else if (strength > 6) alpha = 220;
+            else if (strength > 5) alpha = 200;
+            else if (strength > 4) alpha = 175;
+            else if (strength > 3) alpha = 155;
+            else if (strength > 2) alpha = 130;
             else if (strength > 1) alpha = 90;
             else                   alpha = 40;
             SDL_Color color = { 170, 10, 20, alpha };
@@ -67,19 +71,13 @@ void Game::render(void)
         context.draw_rectangle(blue, player.get_rect());
         context.draw_circle(black, ball.get_circle());
 
+        std::string msg = "Score: " + std::to_string(score);
+        context.draw_text(msg, black, 10, context.get_height()-50);
         if (draw_fps) {
             std::string msg = "FPS: " + std::to_string(current_fps);
             context.draw_text(msg, black, context.get_width()-130,
                               context.get_height()-50);
         }
-    } else if (state == Game::LOST) {
-        context.clear_renderer(red);
-        std::string msg = "You lost!";
-        int w, h;
-        if (TTF_SizeText(context.get_font(36), msg.c_str(), &w, &h))
-            context.quit_on_error(TTF_GetError());
-        context.draw_text(msg, black, context.get_width() / 2 - w / 2,
-                          context.get_height() / 2 - h / 2, 36);
     } else if (state == Game::START) {
         context.clear_renderer(blue);
         std::string msg = "Press SPACE to start!";
@@ -93,6 +91,22 @@ void Game::render(void)
             context.quit_on_error(TTF_GetError());
         context.draw_text(msg, black, context.get_width() / 2 - w / 2,
                           context.get_height() / 2 - 150, 36);
+    } else if (state == Game::LOST) {
+        context.clear_renderer(red);
+        std::string msg = "You lost!";
+        int w, h;
+        if (TTF_SizeText(context.get_font(36), msg.c_str(), &w, &h))
+            context.quit_on_error(TTF_GetError());
+        context.draw_text(msg, black, context.get_width() / 2 - w / 2,
+                          context.get_height() / 2 - h / 2, 36);
+    } else if (state == Game::WON) {
+        context.clear_renderer(green);
+        std::string msg = "You won!";
+        int w, h;
+        if (TTF_SizeText(context.get_font(36), msg.c_str(), &w, &h))
+            context.quit_on_error(TTF_GetError());
+        context.draw_text(msg, black, context.get_width() / 2 - w / 2,
+                          context.get_height() / 2 - h / 2, 36);
     }
 
     context.render_present();
@@ -144,39 +158,35 @@ void Game::update(void)
 void Game::detect_ball_collision(void)
 {
     shapes::Circle ball_circ = ball.get_circle();
-    int32_t screen_height = context.get_height();
-    int32_t ball_radius = ball_circ.get_width() / 2;
+    int32_t screen_height    = context.get_height();
+    int32_t ball_radius      = ball_circ.get_width() / 2;
 
     // collision/exit at bottom of screen
-    if (ball_circ.get_y() - ball_radius > screen_height) {
+    if (ball_circ.get_y() + ball_radius >= screen_height) {
         state = Game::LOST;
         return;
     }
 
     // collision between ball and player
     if (ball.collides_with(player)) {
-        /* NOTE: vectors aren't normalized, so the ball will change its speed
-         * | -- | -- | -- | -- | -- |
-         *  4/1  3/2  2/2  3/2  4/1
-         * Like this, but with 10 zones and 10/2 max vector at edge.
-         */
-        int8_t wzone    = player.get_width() / player.num_zones;
-        int8_t diff     = ball_circ.get_x() - player.get_xpos();
-        int8_t zone_hit = diff / wzone + 1;
+        // NOTE: Vectors aren't normalized, so the ball will change its speed.
+        int32_t wzone = player.get_width() / player.num_zones;
+        int32_t diff  = max(1, ball_circ.get_x() - player.get_xpos());
+        int32_t zone  = min(10, diff / wzone + 1);
 
-        // TODO: increase vector's y component to achieve similar lengths
-        if      (zone_hit == 1) ball.set_xdir(-7);
-        else if (zone_hit == 2) ball.set_xdir(-6);
-        else if (zone_hit == 3) ball.set_xdir(-5);
-        else if (zone_hit == 4) ball.set_xdir(-3);
-        else if (zone_hit == 5) ball.set_xdir(-2);
-        else if (zone_hit == 6) ball.set_xdir(2);
-        else if (zone_hit == 7) ball.set_xdir(3);
-        else if (zone_hit == 8) ball.set_xdir(5);
-        else if (zone_hit == 9) ball.set_xdir(6);
-        else                    ball.set_xdir(7);
-
-        ball.set_ydir(ball.get_ydir() * -1);
+        assert(zone > 0 && zone <= player.num_zones);
+        switch (zone) {
+        case 1:  ball.set_xdir(-9); ball.set_ydir(-4); break;
+        case 2:  ball.set_xdir(-7); ball.set_ydir(-5); break;
+        case 3:  ball.set_xdir(-7); ball.set_ydir(-4); break;
+        case 4:  ball.set_xdir(-6); ball.set_ydir(-5); break;
+        case 5:  ball.set_xdir(-4); ball.set_ydir(-7); break;
+        case 6:  ball.set_xdir(4);  ball.set_ydir(-7); break;
+        case 7:  ball.set_xdir(6);  ball.set_ydir(-5); break;
+        case 8:  ball.set_xdir(7);  ball.set_ydir(-4); break;
+        case 9:  ball.set_xdir(7);  ball.set_ydir(-5); break;
+        case 10: ball.set_xdir(9);  ball.set_ydir(-4); break;
+        }
         return;
     }
 
@@ -184,19 +194,22 @@ void Game::detect_ball_collision(void)
     size_t position = 0;
     for (Block& block: blocks) {
         if (ball.collides_with(block)) {
-            if (!ball.update_on_collision(block))
+            if (!ball.update_on_collision(block)) {
                 blocks.erase(blocks.begin()+position);
+                if (++score >= winning_score) state = Game::WON;
+            }
             return;
         }
         position++;
     }
 
-    // collision between ball and left/right/top
+    // collision between ball and left/right walls
     if (ball.collides_with_wall(context.get_width())) {
         ball.set_xdir(ball.get_xdir() * -1);
         return;
     }
 
+    // collision between ball and top wall
     if (ball.collides_with_top()) {
         ball.set_ydir(ball.get_ydir() * -1);
         return;
@@ -207,14 +220,19 @@ void Game::update_x(Game::direction dir)
 {
     if (is_paused) return;
 
-    int32_t new_xpos = player.get_xpos();
+    int32_t new_xpos  = player.get_xpos();
     if (dir == Game::LEFT)       new_xpos -= xoffset;
     else if (dir == Game::RIGHT) new_xpos += xoffset;
     else context.quit_on_error("unknown direction on x axis");
 
-    int32_t win_width = static_cast<int32_t>(context.get_width());
-    if ((new_xpos >= 0) && (new_xpos + player.get_width() <= win_width))
+    int32_t win_width    = static_cast<int32_t>(context.get_width());
+    int32_t player_width = player.get_width();
+    if ((new_xpos >= 0) && (new_xpos + player_width <= win_width))
         player.set_xpos(new_xpos);
+    else if (new_xpos < 0)
+        player.set_xpos(0);
+    else if (new_xpos + player_width > win_width)
+        player.set_xpos(win_width - player_width);
 }
 
 bool Game::is_still_running(void)
@@ -236,10 +254,10 @@ bool Ball::collides_with(Player player)
 {
     // use a squared hit box
     int32_t b_left = circle.get_x() - circle.get_width()/2;
-    int32_t b_right = circle.get_x() + circle.get_width()/2;
+    int32_t b_right = b_left + circle.get_width()/2;
     int32_t b_bottom = circle.get_y() + circle.get_width()/2;
     int32_t p_left = player.get_xpos();
-    int32_t p_right = player.get_xpos() + player.get_width();
+    int32_t p_right = p_left + player.get_width();
     int32_t p_top = player.get_ypos();
 
     if (b_right >= p_left && b_bottom >= p_top && b_left <= p_right)
@@ -252,7 +270,9 @@ bool Ball::collides_with_wall(int32_t win_width)
     int32_t b_left = circle.get_x() - circle.get_width()/2;
     int32_t b_right = circle.get_x() + circle.get_width()/2;
 
-    if (b_left <= 0 || b_right >= win_width)
+    if (b_left <= 0 && xdir < 0)
+        return true;
+    else if ( b_right >= win_width && xdir > 0)
         return true;
     return false;
 }
@@ -261,7 +281,7 @@ bool Ball::collides_with_top(void)
 {
     int32_t b_top = circle.get_y() - circle.get_width()/2;
 
-    if (b_top <= 0)
+    if (b_top <= 0 && ydir < 0)
         return true;
     return false;
 }
@@ -311,3 +331,5 @@ bool Ball::update_on_collision(Block& block)
 
     return keep_block;
 }
+
+void Game::start(void) { if (state == Game::START) state = Game::PLAYING; }

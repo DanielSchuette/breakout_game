@@ -77,18 +77,21 @@ class Game {
     Ball               ball;
     std::vector<Block> blocks;
     bool               draw_fps;
+    uint32_t           score = 0;
+    const uint32_t     winning_score = 2;
     const uint8_t      xoffset = 15;
     uint32_t           current_fps = 0;
     bool               is_paused = false;
 
-    enum game_state { START, PLAYING, LOST };
-    game_state         state = START;
+    enum game_state { START, PLAYING, WON, LOST };
+    game_state      state = START;
 public:
     enum direction { LEFT, RIGHT };
 
-    Game(bool);
+    Game(bool = false);
 
     void render(void);
+    void start(void);
     void toggle_pause(void);
     void update(void);
     void update_x(direction);
@@ -98,7 +101,6 @@ public:
 
     game_state get_game_state(void)             { return state; }
     void       update_current_fps(uint32_t fps) { current_fps = fps; }
-    void       start(void)                      { state = Game::PLAYING; }
     void       start_ball(void)                 { ball.start(); }
 };
 
