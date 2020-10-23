@@ -16,6 +16,7 @@ struct Player {
 private:
     SDL_Rect rect;
 public:
+    const uint8_t num_zones = 10;
     Player(int32_t x, int32_t y, int32_t w, int32_t h)
         : rect({ x, y, w, h }) {}
 
@@ -37,9 +38,11 @@ public:
     Ball(int32_t x, int32_t y, int32_t w) : circle({ x, y, w }) {}
 
     void update(void);
+    bool update_on_collision(Block&);
     bool collides_with(Player);
-    bool collides_with(Block);
-    bool collides_with_wall(void);
+    bool collides_with(const Block&);
+    bool collides_with_wall(int32_t);
+    bool collides_with_top(void);
 
     void           start(void)             { started = true; }
     shapes::Circle get_circle(void) const  { return circle; }
@@ -59,8 +62,13 @@ public:
         : rect({ x, y, w, h }), strength(s) {}
 
     int8_t   get_strength(void) const      { return strength; }
+    int8_t   decrease_strength(void)       { return --strength; }
     bool     is_indestructable(void) const { return indestructable; }
     SDL_Rect get_rect(void) const          { return rect; }
+    int32_t  get_x(void) const             { return rect.x; }
+    int32_t  get_y(void) const             { return rect.y; }
+    int32_t  get_width(void) const         { return rect.w; }
+    int32_t  get_height(void) const        { return rect.h; }
 };
 
 class Game {
@@ -69,7 +77,7 @@ class Game {
     Ball               ball;
     std::vector<Block> blocks;
     bool               draw_fps;
-    const uint8_t      xoffset = 10;
+    const uint8_t      xoffset = 15;
     uint32_t           current_fps = 0;
     bool               is_paused = false;
 

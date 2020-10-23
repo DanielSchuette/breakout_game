@@ -24,7 +24,8 @@ public:
     Context(void);
     ~Context(void);
 
-    void draw_text(const std::string&, const SDL_Color&, uint32_t, uint32_t, uint8_t = 24);
+    void draw_text(const std::string&, const SDL_Color&, uint32_t, uint32_t,
+                   uint8_t = 24);
     void draw_rectangle(const SDL_Color&, const SDL_Rect& rect);
     void draw_circle(const SDL_Color&, const shapes::Circle&);
     void clear_renderer(SDL_Color = { 180, 180, 180, 255 });

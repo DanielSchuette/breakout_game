@@ -1,3 +1,5 @@
+#include <cassert>
+#include <cstdio>
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -57,7 +59,8 @@ void Game::render(void)
             if (strength > 6)      alpha = 255;
             else if (strength > 4) alpha = 210;
             else if (strength > 2) alpha = 140;
-            else                   alpha = 50;
+            else if (strength > 1) alpha = 90;
+            else                   alpha = 40;
             SDL_Color color = { 170, 10, 20, alpha };
             context.draw_rectangle(color, block.get_rect());
         }
@@ -85,6 +88,11 @@ void Game::render(void)
             context.quit_on_error(TTF_GetError());
         context.draw_text(msg, black, context.get_width() / 2 - w / 2,
                           context.get_height() / 2 - h / 2, 36);
+        msg = "BREAKOUT";
+        if (TTF_SizeText(context.get_font(36), msg.c_str(), &w, &h))
+            context.quit_on_error(TTF_GetError());
+        context.draw_text(msg, black, context.get_width() / 2 - w / 2,
+                          context.get_height() / 2 - 150, 36);
     }
 
     context.render_present();
@@ -147,27 +155,50 @@ void Game::detect_ball_collision(void)
 
     // collision between ball and player
     if (ball.collides_with(player)) {
-        // NOTE: vectors aren't normalized, so the ball will change its speed
-        // | -- | -- | -- | -- | -- |
-        //  4/1  3/2  2/2  3/2  4/1
-        // Like this, but with 10 zones and 10/2 max vector at edge.
-        //int32_t old_ydir = ball.get_ydir();
-        ball.set_xdir(10);
-        ball.set_ydir(-2);
+        /* NOTE: vectors aren't normalized, so the ball will change its speed
+         * | -- | -- | -- | -- | -- |
+         *  4/1  3/2  2/2  3/2  4/1
+         * Like this, but with 10 zones and 10/2 max vector at edge.
+         */
+        int8_t wzone    = player.get_width() / player.num_zones;
+        int8_t diff     = ball_circ.get_x() - player.get_xpos();
+        int8_t zone_hit = diff / wzone + 1;
+
+        // TODO: increase vector's y component to achieve similar lengths
+        if      (zone_hit == 1) ball.set_xdir(-7);
+        else if (zone_hit == 2) ball.set_xdir(-6);
+        else if (zone_hit == 3) ball.set_xdir(-5);
+        else if (zone_hit == 4) ball.set_xdir(-3);
+        else if (zone_hit == 5) ball.set_xdir(-2);
+        else if (zone_hit == 6) ball.set_xdir(2);
+        else if (zone_hit == 7) ball.set_xdir(3);
+        else if (zone_hit == 8) ball.set_xdir(5);
+        else if (zone_hit == 9) ball.set_xdir(6);
+        else                    ball.set_xdir(7);
+
+        ball.set_ydir(ball.get_ydir() * -1);
         return;
     }
 
     // collision between ball and bricks
-    for (const Block& block: blocks) {
+    size_t position = 0;
+    for (Block& block: blocks) {
         if (ball.collides_with(block)) {
-            // TODO
+            if (!ball.update_on_collision(block))
+                blocks.erase(blocks.begin()+position);
             return;
         }
+        position++;
     }
 
     // collision between ball and left/right/top
-    if (ball.collides_with_wall()) {
-        // TODO
+    if (ball.collides_with_wall(context.get_width())) {
+        ball.set_xdir(ball.get_xdir() * -1);
+        return;
+    }
+
+    if (ball.collides_with_top()) {
+        ball.set_ydir(ball.get_ydir() * -1);
         return;
     }
 }
@@ -203,23 +234,80 @@ void Ball::update(void)
 
 bool Ball::collides_with(Player player)
 {
-    int32_t bx = circle.get_x();
-    int32_t by = circle.get_y() + (circle.get_width() / 2);
-    int32_t px1 = player.get_xpos();
-    int32_t px2 = player.get_xpos() + player.get_width();
-    int32_t py = player.get_ypos();
+    // use a squared hit box
+    int32_t b_left = circle.get_x() - circle.get_width()/2;
+    int32_t b_right = circle.get_x() + circle.get_width()/2;
+    int32_t b_bottom = circle.get_y() + circle.get_width()/2;
+    int32_t p_left = player.get_xpos();
+    int32_t p_right = player.get_xpos() + player.get_width();
+    int32_t p_top = player.get_ypos();
 
-    // NOTE: on the y axis, we don't check for an exact match
-    if (bx >= px1 && bx <= px2 && by >= py) return true;
+    if (b_right >= p_left && b_bottom >= p_top && b_left <= p_right)
+        return true;
     return false;
 }
 
-bool Ball::collides_with_wall(void)
+bool Ball::collides_with_wall(int32_t win_width)
 {
+    int32_t b_left = circle.get_x() - circle.get_width()/2;
+    int32_t b_right = circle.get_x() + circle.get_width()/2;
+
+    if (b_left <= 0 || b_right >= win_width)
+        return true;
     return false;
 }
 
-bool Ball::collides_with(Block)
+bool Ball::collides_with_top(void)
 {
+    int32_t b_top = circle.get_y() - circle.get_width()/2;
+
+    if (b_top <= 0)
+        return true;
     return false;
+}
+
+bool Ball::collides_with(const Block& block)
+{
+    int32_t ball_left = circle.get_x() - circle.get_width()/2;
+    int32_t ball_right = circle.get_x() + circle.get_width()/2;
+    int32_t ball_bottom = circle.get_y() + circle.get_width()/2;
+    int32_t ball_top = circle.get_y() - circle.get_width()/2;
+    int32_t block_left = block.get_x();
+    int32_t block_right = block.get_x() + block.get_width();
+    int32_t block_top = block.get_y();
+    int32_t block_bottom = block.get_y() + block.get_height();
+
+    if (ball_right >= block_left && ball_bottom >= block_top &&
+        ball_left <= block_right && ball_top <= block_bottom)
+        return true;
+    return false;
+}
+
+bool Ball::update_on_collision(Block& block)
+{
+    bool keep_block = true;
+    int8_t new_strength = block.decrease_strength();
+    if (new_strength <= 0) keep_block = false;
+
+    int32_t ball_y   = circle.get_y();
+    int32_t top_y    = block.get_y();
+    int32_t bottom_y = top_y + block.get_height();
+
+    // check for all four possible ball directions which face was hit
+    assert(xdir != 0 && ydir != 0);
+    if (xdir > 0 && ydir > 0) {           // moving down and right
+        if (ball_y < top_y) ydir = -ydir; // top face collision
+        else                xdir = -xdir; // left face collision
+    } else if (xdir < 0 && ydir > 0) {    // moving down and left
+        if (ball_y < top_y) ydir = -ydir;
+        else         xdir = -xdir;
+    } else if (xdir > 0 && ydir < 0) {    // moving up and right
+        if (ball_y < bottom_y) xdir = -xdir;
+        else                   ydir = -ydir;
+    } else if (xdir < 0 && ydir < 0) {    // moving up and left
+        if (ball_y < bottom_y) xdir = -xdir;
+        else                   ydir = -ydir;
+    }
+
+    return keep_block;
 }
