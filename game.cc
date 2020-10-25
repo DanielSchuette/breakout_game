@@ -2,10 +2,12 @@
 #include <cstdio>
 #include <iostream>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
 #include "context.hh"
 #include "game.hh"
+#include "ui.hh"
 
 template <typename T>
 static T min(const T& a, const T& b) { return (a <= b) ? a : b; }
@@ -30,16 +32,17 @@ Game::Game(bool draw_fps)
     : player(default_player), ball(default_ball), draw_fps(draw_fps)
 {
     const uint32_t block_width  = 80;
-    const uint32_t block_height = 20;
-    const uint32_t margin       = 10;
-    const uint32_t num_blocks_x = (context.get_width()-margin) / block_width;
-    const uint32_t num_blocks_y = 6;
+    const uint32_t block_height = 40;
+    const uint32_t xmargin      = 10;
+    const uint32_t ymargin      = 5;
+    const uint32_t num_blocks_x = (context.get_width()-xmargin) / block_width;
+    const uint32_t num_blocks_y = 4;
 
     for (uint32_t x = 0; x < num_blocks_x; x++)
         for (uint32_t y = 0; y < num_blocks_y; y++) {
             blocks.emplace_back(Block(
-                    x*block_width + (x+1)*margin,
-                    y*block_height + (y+1)*margin,
+                    x*block_width + (x+1)*xmargin,
+                    y*block_height + (y+1)*ymargin,
                     block_width,
                     block_height,
                     num_blocks_y - y
@@ -55,18 +58,9 @@ void Game::render(void)
         context.clear_renderer();
 
         for (const Block& block: blocks) {
-            uint8_t strength = block.get_strength();
-            uint8_t alpha;
-            if (strength > 7)      alpha = 255;
-            else if (strength > 6) alpha = 220;
-            else if (strength > 5) alpha = 200;
-            else if (strength > 4) alpha = 175;
-            else if (strength > 3) alpha = 155;
-            else if (strength > 2) alpha = 130;
-            else if (strength > 1) alpha = 90;
-            else                   alpha = 40;
-            SDL_Color color = { 170, 10, 20, alpha };
-            context.draw_rectangle(color, block.get_rect());
+            SDL_Rect crop = { 100, 100, 100, 100 };
+            context.draw_texture("./assets/textures/brick.png", crop,
+                                 block.get_rect());
         }
         context.draw_rectangle(blue, player.get_rect());
         context.draw_circle(black, ball.get_circle());
@@ -91,6 +85,10 @@ void Game::render(void)
             context.quit_on_error(TTF_GetError());
         context.draw_text(msg, black, context.get_width() / 2 - w / 2,
                           context.get_height() / 2 - 150, 36);
+
+        // NOTE: button test (still need to implement big 3)
+        ui::Button button = ui::Button(50, 50, 130, 50);
+        button.render(context);
     } else if (state == Game::LOST) {
         context.clear_renderer(red);
         std::string msg = "You lost!";
@@ -164,6 +162,7 @@ void Game::detect_ball_collision(void)
     // collision/exit at bottom of screen
     if (ball_circ.get_y() + ball_radius >= screen_height) {
         state = Game::LOST;
+        context.play_audio("./assets/sounds/lose_sound.wav");
         return;
     }
 
@@ -171,8 +170,8 @@ void Game::detect_ball_collision(void)
     if (ball.collides_with(player)) {
         // NOTE: Vectors aren't normalized, so the ball will change its speed.
         int32_t wzone = player.get_width() / player.num_zones;
-        int32_t diff  = max(1, ball_circ.get_x() - player.get_xpos());
-        int32_t zone  = min(10, diff / wzone + 1);
+        int32_t diff  = std::max(1, ball_circ.get_x() - player.get_xpos());
+        int32_t zone  = std::min(10, diff / wzone + 1);
 
         assert(zone > 0 && zone <= player.num_zones);
         switch (zone) {

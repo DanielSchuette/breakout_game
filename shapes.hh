@@ -12,7 +12,7 @@ namespace shapes {
         int32_t x, y; // midpoint coordinates
         int32_t w;    // it's a circle, so width and height are the same
     public:
-        Circle(int32_t x, int32_t y, int32_t w) : x(x), y(y), w(w) {}
+        constexpr Circle(int32_t x, int32_t y, int32_t w) : x(x), y(y), w(w) {}
 
         void render(SDL_Renderer*) const;
         void render1(SDL_Renderer*) const;

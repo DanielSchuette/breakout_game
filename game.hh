@@ -17,16 +17,16 @@ private:
     SDL_Rect rect;
 public:
     const uint8_t num_zones = 10;
-    Player(int32_t x, int32_t y, int32_t w, int32_t h)
+    constexpr Player(int32_t x, int32_t y, int32_t w, int32_t h)
         : rect({ x, y, w, h }) {}
 
-    void     set_ypos(int32_t y)    { rect.y = y; }
-    void     set_xpos(int32_t x)    { rect.x = x; }
-    int32_t  get_xpos(void) const   { return rect.x; }
-    int32_t  get_ypos(void) const   { return rect.y; }
-    int32_t  get_width(void) const  { return rect.w; }
-    int32_t  get_height(void) const { return rect.h; }
-    SDL_Rect get_rect(void) const   { return rect; }
+    constexpr void     set_ypos(int32_t y)    { rect.y = y; }
+    constexpr void     set_xpos(int32_t x)    { rect.x = x; }
+    constexpr int32_t  get_xpos(void) const   { return rect.x; }
+    constexpr int32_t  get_ypos(void) const   { return rect.y; }
+    constexpr int32_t  get_width(void) const  { return rect.w; }
+    constexpr int32_t  get_height(void) const { return rect.h; }
+    constexpr SDL_Rect get_rect(void) const   { return rect; }
 };
 
 struct Ball {
@@ -35,7 +35,7 @@ private:
     bool           started = false;
     int32_t        xdir = 2, ydir = 3;
 public:
-    Ball(int32_t x, int32_t y, int32_t w) : circle({ x, y, w }) {}
+    constexpr Ball(int32_t x, int32_t y, int32_t w) : circle({ x, y, w }) {}
 
     void update(void);
     bool update_on_collision(Block&);
@@ -44,12 +44,12 @@ public:
     bool collides_with_wall(int32_t);
     bool collides_with_top(void);
 
-    void           start(void)             { started = true; }
-    shapes::Circle get_circle(void) const  { return circle; }
-    void           set_xdir(int32_t x)     { xdir = x; }
-    void           set_ydir(int32_t y)     { ydir = y; }
-    int32_t        get_xdir(void)          { return xdir; }
-    int32_t        get_ydir(void)          { return ydir; }
+    constexpr void           start(void)             { started = true; }
+    constexpr shapes::Circle get_circle(void) const  { return circle; }
+    constexpr void           set_xdir(int32_t x)     { xdir = x; }
+    constexpr void           set_ydir(int32_t y)     { ydir = y; }
+    constexpr int32_t        get_xdir(void)          { return xdir; }
+    constexpr int32_t        get_ydir(void)          { return ydir; }
 };
 
 struct Block {
@@ -58,17 +58,17 @@ private:
     uint8_t  strength;       // how often it needs to be hit to disappear
     bool     indestructable; // this block never disappears
 public:
-    Block(int32_t x, int32_t y, int32_t w, int32_t h, int8_t s)
+    constexpr Block(int32_t x, int32_t y, int32_t w, int32_t h, int8_t s)
         : rect({ x, y, w, h }), strength(s) {}
 
-    int8_t   get_strength(void) const      { return strength; }
-    int8_t   decrease_strength(void)       { return --strength; }
-    bool     is_indestructable(void) const { return indestructable; }
-    SDL_Rect get_rect(void) const          { return rect; }
-    int32_t  get_x(void) const             { return rect.x; }
-    int32_t  get_y(void) const             { return rect.y; }
-    int32_t  get_width(void) const         { return rect.w; }
-    int32_t  get_height(void) const        { return rect.h; }
+    constexpr int8_t   get_strength(void) const      { return strength; }
+    constexpr int8_t   decrease_strength(void)       { return --strength; }
+    constexpr bool     is_indestructable(void) const { return indestructable; }
+    constexpr SDL_Rect get_rect(void) const          { return rect; }
+    constexpr int32_t  get_x(void) const             { return rect.x; }
+    constexpr int32_t  get_y(void) const             { return rect.y; }
+    constexpr int32_t  get_width(void) const         { return rect.w; }
+    constexpr int32_t  get_height(void) const        { return rect.h; }
 };
 
 class Game {
@@ -76,9 +76,9 @@ class Game {
     Player             player;
     Ball               ball;
     std::vector<Block> blocks;
-    bool               draw_fps;
+    const bool         draw_fps;
     uint32_t           score = 0;
-    const uint32_t     winning_score = 2;
+    const uint32_t     winning_score = 15;
     const uint8_t      xoffset = 15;
     uint32_t           current_fps = 0;
     bool               is_paused = false;
@@ -99,9 +99,9 @@ public:
     void key_press(void);
     bool is_still_running(void);
 
-    game_state get_game_state(void)             { return state; }
-    void       update_current_fps(uint32_t fps) { current_fps = fps; }
-    void       start_ball(void)                 { ball.start(); }
+    constexpr game_state get_game_state(void)             { return state; }
+    constexpr void       update_current_fps(uint32_t fps) { current_fps = fps; }
+    constexpr void       start_ball(void)                 { ball.start(); }
 };
 
 #endif /* _GAME_H_ */

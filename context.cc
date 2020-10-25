@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <thread>
 
 #include "context.hh"
 #include "shapes.hh"
@@ -41,6 +42,8 @@ Context::Context(void)
 
 Context::~Context(void)
 {
+    for (std::pair<const char*, SDL_Texture*> pair: texture_map)
+        SDL_DestroyTexture(pair.second);
     if (window)   SDL_DestroyWindow(window);
     if (renderer) SDL_DestroyRenderer(renderer);
     if (font24)   TTF_CloseFont(font24);
@@ -68,10 +71,19 @@ void Context::clear_renderer(SDL_Color c)
 /* Draw an `SDL_Rect' to the screen. The caller must still invoke
  * `render_present()'.
  */
-void Context::draw_rectangle(const SDL_Color& color, const SDL_Rect& rect)
+void Context::draw_rectangle(const SDL_Color& color, const SDL_Rect& rect,
+                             bool fill)
 {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    SDL_RenderFillRect(renderer, &rect);
+    if (fill) SDL_RenderFillRect(renderer, &rect);
+    else      SDL_RenderDrawRect(renderer, &rect);
+}
+
+void Context::draw_line(const SDL_Color& color, int32_t x0, int32_t y0,
+                        int32_t x1, int32_t y1)
+{
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderDrawLine(renderer, x0, y0, x1, y1);
 }
 
 void Context::draw_circle(const SDL_Color& color, const shapes::Circle& circ)
@@ -105,6 +117,74 @@ void Context::draw_text(const std::string& text, const SDL_Color& color,
     SDL_DestroyTexture(tx);
 }
 
+void Context::draw_texture(const char* path, const SDL_Rect& dest)
+{
+    SDL_Texture* tex;
+
+    if (texture_map.find(path) == texture_map.end()) {
+        SDL_Surface* surf = IMG_Load(path);
+        tex = SDL_CreateTextureFromSurface(renderer, surf);
+        SDL_FreeSurface(surf);
+        texture_map[path] = tex;
+    } else {
+        tex = texture_map[path];
+    }
+
+    SDL_Rect r = dest;
+    copy_texture_to_renderer(tex, &r);
+}
+
+/* This overload does cropping of the source based on the coordinates supplied
+ * via `srcr'. Otherwise, the code is identical to `draw_texture()' above.
+ * TODO: instead of just looking up the path in the map, we now need to check
+ *       if the texture exists in the correct cropping dimensions.
+ */
+void Context::draw_texture(const char* path, const SDL_Rect& src,
+                           const SDL_Rect& dest)
+{
+    SDL_Texture* tex;
+
+    if (texture_map.find(path) == texture_map.end()) {
+        SDL_Surface* surf = IMG_Load(path);
+        crop_surface(&surf, src.x, src.y, src.w, src.h);
+        tex = SDL_CreateTextureFromSurface(renderer, surf);
+        SDL_FreeSurface(surf);
+        texture_map[path] = tex;
+    } else {
+        tex = texture_map[path];
+    }
+
+    SDL_Rect r = dest;
+    copy_texture_to_renderer(tex, &r);
+}
+
+void Context::crop_surface(SDL_Surface** surface, uint32_t x, uint32_t y,
+                           uint32_t width, uint32_t height)
+{
+    uint32_t rm, gm, bm, am;
+    #if SDL_BYTEORDER == SDL_BIG_ENDIAN
+        rm = 0xff000000; gm = 0x00ff0000; bm = 0x0000ff00; am = 0x000000ff;
+    #else
+        rm = 0x000000ff; gm = 0x0000ff00; bm = 0x00ff0000; am = 0xff000000;
+    #endif
+
+    SDL_Surface* cropped_surf = SDL_CreateRGBSurface(0, width, height, 32,
+                                                     rm, gm, bm, am);
+    if (cropped_surf == NULL)
+        quit_on_error(SDL_GetError());
+
+    SDL_Rect r;
+    r.x = x;
+    r.y = y;
+    r.w = width;
+    r.h = height;
+    if (SDL_BlitSurface(*surface, &r, cropped_surf, NULL) != 0)
+        quit_on_error(SDL_GetError());
+
+    SDL_FreeSurface(*surface);
+    *surface = cropped_surf;
+}
+
 /* Copy a texture to the renderer. The caller must still invoke
  * `render_present()'. We use this function for better naming and convenience,
  * since we usually don't specify any copy flags.
@@ -120,4 +200,31 @@ TTF_Font* Context::get_font(uint8_t fontsize) const
     if (fontsize == 24)      return font24;
     else if (fontsize == 36) return font36;
     return nullptr;
+}
+
+void Context::play_audio(const char* audio_path)
+{
+    auto fn = [&, audio_path](void) -> void {
+        SDL_AudioSpec wav_spec;
+        uint32_t      wav_length;
+        uint8_t*      wav_buffer;
+
+        if (SDL_LoadWAV(audio_path, &wav_spec,
+                        &wav_buffer, &wav_length) == NULL) {
+            std::cerr << "error: unable to load .wav file\n";
+            quit_on_error(SDL_GetError());
+        }
+
+        SDL_AudioDeviceID device_id = SDL_OpenAudioDevice(NULL, 0, &wav_spec,
+                                                          NULL, 0);
+        SDL_QueueAudio(device_id, wav_buffer, wav_length);
+        SDL_PauseAudioDevice(device_id, 0);
+
+        SDL_Delay(3000);   // just a heuristic, no idea how to determine the
+                           // length of the sound
+        SDL_CloseAudioDevice(device_id);
+        SDL_FreeWAV(wav_buffer);
+    };
+    std::thread audio_thread(fn);
+    audio_thread.detach(); // don't block the game
 }
