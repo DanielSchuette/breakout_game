@@ -28,6 +28,8 @@ int main(int argc, char** argv)
                     return 1;
                 case SDL_KEYDOWN:
                     return 1;
+                case SDL_MOUSEBUTTONDOWN:
+                    return 1;
                 default:
                     return 0;
                 }
@@ -70,6 +72,17 @@ int main(int argc, char** argv)
                     }
                 }
                 break;
+            case SDL_MOUSEBUTTONDOWN:
+                {
+                    int pressed_button = event.button.button;
+                    int32_t x = event.button.x;
+                    int32_t y = event.button.y;
+                    switch (pressed_button) {
+                    case SDL_BUTTON_LEFT:
+                        game.left_button_press(x, y);
+                        break;
+                    }
+                }
             default:
                 break;
             }

@@ -6,6 +6,7 @@
 
 #include "context.hh"
 #include "shapes.hh"
+#include "ui.hh"
 
 class Game;
 struct Player;
@@ -83,7 +84,9 @@ class Game {
     uint32_t           current_fps = 0;
     bool               is_paused = false;
 
-    enum game_state { START, PLAYING, WON, LOST };
+    std::vector<ui::Button> ui_buttons;
+
+    enum game_state { START, HIGHSCORE, PLAYING, WON, LOST };
     game_state      state = START;
 public:
     enum direction { LEFT, RIGHT };
@@ -97,6 +100,7 @@ public:
     void update_x(direction);
     void detect_ball_collision(void);
     void key_press(void);
+    void left_button_press(int32_t, int32_t);
     bool is_still_running(void);
 
     constexpr game_state get_game_state(void)             { return state; }

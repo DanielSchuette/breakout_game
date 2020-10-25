@@ -48,6 +48,12 @@ Game::Game(bool draw_fps)
                     num_blocks_y - y
                     ));
         }
+
+    // NOTE: the font needs to live as long as the button
+    ui::Button button(10, 10, 250, 80);
+    button.add_text("Hello Coco", context.get_font());
+    button.add_callback([&](void*) -> void { state = Game::HIGHSCORE; });
+    ui_buttons.emplace_back(button);
 }
 
 void Game::render(void)
@@ -86,25 +92,20 @@ void Game::render(void)
         context.draw_text(msg, black, context.get_width() / 2 - w / 2,
                           context.get_height() / 2 - 150, 36);
 
-        // NOTE: button test (still need to implement big 3)
-        ui::Button button = ui::Button(50, 50, 130, 50);
-        button.render(context);
+        for (ui::Button& button: ui_buttons)
+            button.render(context, -1, -1);
+    } else if (state == Game::HIGHSCORE) {
+        context.clear_renderer(blue);
+        std::string msg = "HIGHSCORES";
+        context.draw_text(msg, black, -1, -1, 36);
     } else if (state == Game::LOST) {
         context.clear_renderer(red);
         std::string msg = "You lost!";
-        int w, h;
-        if (TTF_SizeText(context.get_font(36), msg.c_str(), &w, &h))
-            context.quit_on_error(TTF_GetError());
-        context.draw_text(msg, black, context.get_width() / 2 - w / 2,
-                          context.get_height() / 2 - h / 2, 36);
+        context.draw_text(msg, black, -1, -1, 36);
     } else if (state == Game::WON) {
         context.clear_renderer(green);
         std::string msg = "You won!";
-        int w, h;
-        if (TTF_SizeText(context.get_font(36), msg.c_str(), &w, &h))
-            context.quit_on_error(TTF_GetError());
-        context.draw_text(msg, black, context.get_width() / 2 - w / 2,
-                          context.get_height() / 2 - h / 2, 36);
+        context.draw_text(msg, black, -1, -1, 36);
     }
 
     context.render_present();
@@ -116,6 +117,20 @@ void Game::key_press(void)
         state = Game::PLAYING;
     } else if (state == Game::LOST) {
         context.quit_on_success(0);
+    }
+}
+
+void Game::left_button_press(int32_t x, int32_t y)
+{
+    /* Render the pressed button for 200ms, minimally delaying the game. Here,
+     * we rely on the fact that just one button can be clicked at a time.
+     */
+    for (ui::Button& button: ui_buttons) {
+        bool selected = button.render(context, x, y, true);
+        if (selected) {
+            context.render_present();
+            SDL_Delay(150);
+        }
     }
 }
 

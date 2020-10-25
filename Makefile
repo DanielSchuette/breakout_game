@@ -12,7 +12,7 @@ endif
 
 BIN       = breakout
 BIN_FLAGS = -print_fps=true
-SRCS      = main.cc context.cc game.cc shapes.cc ui.cc
+SRCS      = main.cc context.cc game.cc shapes.cc ui.cc utils.cc
 OBJS      = $(SRCS:.cc=.o)
 DEPS 	  = $(SRCS:.cc=.d)
 

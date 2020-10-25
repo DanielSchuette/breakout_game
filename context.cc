@@ -93,12 +93,12 @@ void Context::draw_circle(const SDL_Color& color, const shapes::Circle& circ)
 }
 
 /* Copy text to the renderer. The caller must still invoke `render_present()'.
- * The standard font set for this context is used.
+ * The standard font set for this context is used. If x and/or y are ``-1''
+ * then the given text will be centered in that direction.
  */
 void Context::draw_text(const std::string& text, const SDL_Color& color,
-                        uint32_t x, uint32_t y, uint8_t fontsize)
+                        int32_t x, int32_t y, uint8_t fontsize)
 {
-    // TODO: surface and texture error checking
     SDL_Surface* sf;
     if (fontsize == 24)
         sf = TTF_RenderText_Solid(font24, text.c_str(), color);
@@ -106,11 +106,47 @@ void Context::draw_text(const std::string& text, const SDL_Color& color,
         sf = TTF_RenderText_Solid(font36, text.c_str(), color);
     else
         quit_on_error("invalid font size specified");
+    if (!sf) quit_on_error(TTF_GetError());
+
     SDL_Texture* tx = SDL_CreateTextureFromSurface(renderer, sf);
+    if (!tx) quit_on_error(SDL_GetError());
+
+    int w, h;
+    if (x == -1 || y == -1)
+        if (TTF_SizeText(get_font(36), text.c_str(), &w, &h))
+            quit_on_error(TTF_GetError());
 
     SDL_Rect r;
-    r.x = x;
-    r.y = y;
+    if (x == -1) r.x = get_width() / 2 - w / 2;
+    else         r.x = x;
+    if (y == -1) r.y = get_height() / 2 - h / 2;
+    else         r.y = y;
+
+    SDL_QueryTexture(tx, NULL, NULL, &r.w, &r.h);
+    copy_texture_to_renderer(tx, &r);
+    SDL_FreeSurface(sf);
+    SDL_DestroyTexture(tx);
+}
+
+void Context::draw_text(const std::string& text, const SDL_Color& color,
+                        int32_t x, int32_t y, TTF_Font* font)
+{
+    SDL_Surface* sf = TTF_RenderText_Solid(font, text.c_str(), color);
+    if (!sf) quit_on_error(TTF_GetError());
+    SDL_Texture* tx = SDL_CreateTextureFromSurface(renderer, sf);
+    if (!tx) quit_on_error(SDL_GetError());
+
+    int w, h;
+    if (x == -1 || y == -1)
+        if (TTF_SizeText(get_font(36), text.c_str(), &w, &h))
+            quit_on_error(TTF_GetError());
+
+    SDL_Rect r;
+    if (x == -1) r.x = get_width() / 2 - w / 2;
+    else         r.x = x;
+    if (y == -1) r.y = get_height() / 2 - h / 2;
+    else         r.y = y;
+
     SDL_QueryTexture(tx, NULL, NULL, &r.w, &r.h);
     copy_texture_to_renderer(tx, &r);
     SDL_FreeSurface(sf);
