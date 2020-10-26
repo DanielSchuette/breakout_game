@@ -49,7 +49,9 @@ class ui::Button {
     SDL_Rect rect;
     Text     text = Text();
 
-    std::function<void(void*)> callback;
+    typedef std::function<void(void*)> cb_fn;
+    cb_fn callback;
+    void* user_data;
 
     constexpr static SDL_Color black0 = { 40, 40, 40, 255 };
     constexpr static SDL_Color green0 = { 160, 220, 100, 255 };
@@ -69,8 +71,8 @@ public:
     void add_text(const std::string& text, TTF_Font*);
     bool render(Context& context, int32_t, int32_t, bool = false);
 
-    void add_callback(std::function<void(void*)> fn) { callback = fn; }
-    std::string get_text(void)                       { return text.text; }
+    void add_callback(cb_fn fn, void* ud) { callback = fn; user_data = ud; }
+    std::string get_text(void)            { return text.text; }
 
     friend void swap(Button& fst, Button& snd)
     {
@@ -78,6 +80,7 @@ public:
         swap(fst.rect, snd.rect);
         swap(fst.text, snd.text);
         swap(fst.callback, snd.callback);
+        swap(fst.user_data, snd.user_data);
     }
 };
 

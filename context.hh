@@ -10,15 +10,16 @@
 #include "shapes.hh"
 
 class Context {
-    SDL_Window*     window     = nullptr;
-    SDL_Renderer*   renderer   = nullptr;
-    TTF_Font*       font24     = nullptr;
-    TTF_Font*       font36     = nullptr;
-    const char*     title      = "Breakout";
-    const uint32_t  win_x_pos  = SDL_WINDOWPOS_CENTERED;
-    const uint32_t  win_y_pos  = SDL_WINDOWPOS_CENTERED;
-    const uint32_t  win_width  = 910;
-    const uint32_t  win_height = 720;
+    SDL_Window*    window     = nullptr;
+    SDL_Renderer*  renderer   = nullptr;
+    TTF_Font*      font24     = nullptr;
+    TTF_Font*      font36     = nullptr;
+    const char*    title      = "Breakout";
+    const uint32_t win_x_pos  = SDL_WINDOWPOS_CENTERED;
+    const uint32_t win_y_pos  = SDL_WINDOWPOS_CENTERED;
+    const uint32_t win_width  = 910;
+    const uint32_t win_height = 720;
+
     std::unordered_map<const char*, SDL_Texture*> texture_map;
 
     void copy_texture_to_renderer(SDL_Texture*, SDL_Rect*);
@@ -38,18 +39,17 @@ public:
                    TTF_Font*);
     void play_audio(const char*);
     void clear_renderer(SDL_Color = { 180, 180, 180, 255 });
+    TTF_Font* get_font(uint8_t = 24) const;
 
     [[noreturn]] void quit_on_error(const char*) const;
     [[noreturn]] void quit_on_success(int code) const { exit(code); }
 
-    constexpr SDL_Window*   get_window(void) const   { return window; }
-    constexpr uint32_t      get_height(void) const   { return win_height; }
-    constexpr uint32_t      get_width(void) const    { return win_width; }
-    constexpr SDL_Renderer* get_renderer(void) const { return renderer; }
+    constexpr uint32_t get_height(void) const { return win_height; }
+    constexpr uint32_t get_width(void) const  { return win_width; }
 
-    void render_present(void) { SDL_RenderPresent(renderer); }
-
-    TTF_Font*     get_font(uint8_t = 24) const;
+    void          render_present(void)     { SDL_RenderPresent(renderer); }
+    SDL_Window*   get_window(void) const   { return window; }
+    SDL_Renderer* get_renderer(void) const { return renderer; }
 };
 
 #endif /* _CONTEXT_H_ */

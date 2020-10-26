@@ -10,10 +10,16 @@
 #include "ui.hh"
 
 template <typename T>
-static T min(const T& a, const T& b) { return (a <= b) ? a : b; }
+static constexpr const T& min(const T& a, const T& b)
+{
+    return (a <= b) ? a : b;
+}
 
 template <typename T>
-static T max(const T& a, const T& b) { return (a >= b) ? a : b; }
+static constexpr const T& max(const T& a, const T& b)
+{
+    return (a >= b) ? a : b;
+}
 
 static const SDL_Color blue  = { 37, 26, 239, 255 };
 static const SDL_Color red   = { 170, 10, 20, 255 };
@@ -52,15 +58,15 @@ Game::Game(bool draw_fps)
     // NOTE: the font needs to live as long as the button
     ui::Button button(10, 10, 250, 80);
     button.add_text("Hello Coco", context.get_font());
-    button.add_callback([&](void*) -> void { state = Game::HIGHSCORE; });
+    button.add_callback([&](void*) { state = Game::HIGHSCORE; }, nullptr);
     ui_buttons.emplace_back(button);
 }
 
 void Game::render(void)
 {
-    if (is_paused) return;
-
-    if (state == Game::PLAYING) {
+    if (state == Game::PAUSED) {
+        return;
+    } else if (state == Game::PLAYING) {
         context.clear_renderer();
 
         for (const Block& block: blocks) {
@@ -122,22 +128,29 @@ void Game::key_press(void)
 
 void Game::left_button_press(int32_t x, int32_t y)
 {
-    /* Render the pressed button for 200ms, minimally delaying the game. Here,
-     * we rely on the fact that just one button can be clicked at a time.
-     */
-    for (ui::Button& button: ui_buttons) {
-        bool selected = button.render(context, x, y, true);
-        if (selected) {
-            context.render_present();
-            SDL_Delay(150);
+    if (state == Game::START) {
+        /* Render the pressed button for 200ms, minimally delaying the game.
+         * Here, we rely on the fact that just one button can be clicked at a
+         * time.
+         */
+        for (ui::Button& button: ui_buttons) {
+            bool selected = button.render(context, x, y, true);
+            if (selected) {
+                context.render_present();
+                SDL_Delay(150);
+            }
         }
     }
 }
 
 void Game::toggle_pause(void)
 {
-    is_paused = !is_paused;
-    if (is_paused) {
+    // pausing doesn't do much for most game states
+    if (state == Game::PLAYING)     state = Game::PAUSED;
+    else if (state == Game::PAUSED) state = Game::PLAYING;
+
+    // render this message once when entering the pausing state
+    if (state == Game::PAUSED) {
         std::string msg = "The game is paused!";
         int w, h;
         if (TTF_SizeText(context.get_font(), msg.c_str(), &w, &h))
@@ -150,9 +163,9 @@ void Game::toggle_pause(void)
 
 void Game::update(void)
 {
-    if (is_paused) return;
-
-    if (state == Game::START) {
+    if (state == Game::PAUSED) {
+        return;
+    } else if (state == Game::START) {
         // nothing to update
     } else if (state == Game::PLAYING) {
         ball.update();
@@ -232,7 +245,8 @@ void Game::detect_ball_collision(void)
 
 void Game::update_x(Game::direction dir)
 {
-    if (is_paused) return;
+    // we don't want to update coordinates in most states
+    if (state != Game::PLAYING) return;
 
     int32_t new_xpos  = player.get_xpos();
     if (dir == Game::LEFT)       new_xpos -= xoffset;

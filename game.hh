@@ -82,11 +82,10 @@ class Game {
     const uint32_t     winning_score = 15;
     const uint8_t      xoffset = 15;
     uint32_t           current_fps = 0;
-    bool               is_paused = false;
 
     std::vector<ui::Button> ui_buttons;
 
-    enum game_state { START, HIGHSCORE, PLAYING, WON, LOST };
+    enum game_state { START, HIGHSCORE, PLAYING, PAUSED, WON, LOST };
     game_state      state = START;
 public:
     enum direction { LEFT, RIGHT };
@@ -103,9 +102,9 @@ public:
     void left_button_press(int32_t, int32_t);
     bool is_still_running(void);
 
-    constexpr game_state get_game_state(void)             { return state; }
-    constexpr void       update_current_fps(uint32_t fps) { current_fps = fps; }
-    constexpr void       start_ball(void)                 { ball.start(); }
+    game_state get_game_state(void)             { return state; }
+    void       update_current_fps(uint32_t fps) { current_fps = fps; }
+    void       start_ball(void)                 { ball.start(); }
 };
 
 #endif /* _GAME_H_ */

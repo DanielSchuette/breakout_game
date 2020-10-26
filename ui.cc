@@ -13,6 +13,7 @@ ui::Button::Button(const ui::Button& other)
     rect = { other.rect.x, other.rect.y, other.rect.w, other.rect.h };
     text = other.text;
     callback = other.callback;
+    user_data = other.user_data;
 }
 
 ui::Button& ui::Button::operator=(ui::Button other)
@@ -67,7 +68,7 @@ bool ui::Button::render(Context& context, int32_t x, int32_t y, bool pressed)
         context.draw_rectangle(grey1-70, shadow1, false);
         context.draw_rectangle(grey2-70, shadow2, false);
         context.draw_rectangle(grey3-70, shadow3, false);
-        callback(nullptr);
+        callback(user_data);
     } else {
         context.draw_rectangle(green0, rect);
         context.draw_rectangle(grey1, shadow1, false);
