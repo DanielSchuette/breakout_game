@@ -1,6 +1,7 @@
 # Make the game.
 CC 		   = gcc
-CCFLAGS    = -Wall -Werror -Wpedantic -Wextra --std=c++20 -O0 \
+CCFLAGS    = -Wall -Werror -Wpedantic -Wextra -Wwrite-strings -Warray-bounds \
+			 --std=c++20 -O0 \
 			 $(shell pkgconf sdl2 --cflags)
 LDFLAGS    = -lm -lSDL2_image -lSDL2_ttf -lpthread -lstdc++ \
 			 $(shell pkgconf sdl2 --libs)

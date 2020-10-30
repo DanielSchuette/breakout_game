@@ -29,7 +29,7 @@ namespace ui {
         bool is_empty(void)             { return text.empty(); }
         void set_color(SDL_Color color) { this->color = color; }
 
-        friend void swap(Text& fst, Text& snd)
+        friend void swap(Text& fst, Text& snd) noexcept
         {
             using std::swap;
             swap(fst.x, snd.x);
@@ -64,7 +64,7 @@ public:
     Button(int32_t x, int32_t y, int32_t w, int32_t h)
         : rect({ x, y, w, h }) {}
     Button(const Button&);
-    Button(Button&& other) { rect = other.rect; text = other.text; }
+    Button(Button&& other) noexcept { rect = other.rect; text = other.text; }
     ~Button(void) {}
     Button& operator=(Button);
 
@@ -74,7 +74,7 @@ public:
     void add_callback(cb_fn fn, void* ud) { callback = fn; user_data = ud; }
     std::string get_text(void)            { return text.text; }
 
-    friend void swap(Button& fst, Button& snd)
+    friend void swap(Button& fst, Button& snd) noexcept
     {
         using std::swap; // enable ADL
         swap(fst.rect, snd.rect);
