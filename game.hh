@@ -85,10 +85,10 @@ class Game {
 
     std::vector<ui::Button> ui_buttons;
 
-    enum game_state { START, HIGHSCORE, PLAYING, PAUSED, WON, LOST };
-    game_state      state = START;
+    enum class GameState { START, HIGHSCORE, PLAYING, PAUSED, WON, LOST };
+    GameState state = GameState::START;
 public:
-    enum direction { LEFT, RIGHT };
+    enum class Direction { LEFT, RIGHT };
 
     Game(bool = false);
 
@@ -96,15 +96,15 @@ public:
     void start(void);
     void toggle_pause(void);
     void update(void);
-    void update_x(direction);
+    void update_x(Direction);
     void detect_ball_collision(void);
     void key_press(void);
     void left_button_press(int32_t, int32_t);
     bool is_still_running(void);
 
-    game_state get_game_state(void)             { return state; }
-    void       update_current_fps(uint32_t fps) { current_fps = fps; }
-    void       start_ball(void)                 { ball.start(); }
+    GameState get_game_state(void)             { return state; }
+    void      update_current_fps(uint32_t fps) { current_fps = fps; }
+    void      start_ball(void)                 { ball.start(); }
 };
 
 #endif /* _GAME_H_ */

@@ -51,10 +51,10 @@ int main(int argc, char** argv)
                     int pressed_key = event.key.keysym.scancode;
                     switch (pressed_key) {
                     case SDL_SCANCODE_LEFT:
-                        game.update_x(Game::LEFT);
+                        game.update_x(Game::Direction::LEFT);
                         break;
                     case SDL_SCANCODE_RIGHT:
-                        game.update_x(Game::RIGHT);
+                        game.update_x(Game::Direction::RIGHT);
                         break;
                     case SDL_SCANCODE_Q:
                         quit = true;

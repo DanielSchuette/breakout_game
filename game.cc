@@ -58,15 +58,15 @@ Game::Game(bool draw_fps)
     // NOTE: the font needs to live as long as the button
     ui::Button button(10, 10, 250, 80);
     button.add_text("Hello Coco", context.get_font());
-    button.add_callback([&](void*) { state = Game::HIGHSCORE; }, nullptr);
+    button.add_callback([&](void*) { state = GameState::HIGHSCORE; }, nullptr);
     ui_buttons.emplace_back(button);
 }
 
 void Game::render(void)
 {
-    if (state == Game::PAUSED) {
+    if (state == GameState::PAUSED) {
         return;
-    } else if (state == Game::PLAYING) {
+    } else if (state == GameState::PLAYING) {
         context.clear_renderer();
 
         for (const Block& block: blocks) {
@@ -84,7 +84,7 @@ void Game::render(void)
             context.draw_text(msg, black, context.get_width()-130,
                               context.get_height()-50);
         }
-    } else if (state == Game::START) {
+    } else if (state == GameState::START) {
         context.clear_renderer(blue);
         std::string msg = "Press SPACE to start!";
         int w, h;
@@ -100,15 +100,15 @@ void Game::render(void)
 
         for (ui::Button& button: ui_buttons)
             button.render(context, -1, -1);
-    } else if (state == Game::HIGHSCORE) {
+    } else if (state == GameState::HIGHSCORE) {
         context.clear_renderer(blue);
         std::string msg = "HIGHSCORES";
         context.draw_text(msg, black, -1, -1, 36);
-    } else if (state == Game::LOST) {
+    } else if (state == GameState::LOST) {
         context.clear_renderer(red);
         std::string msg = "You lost!";
         context.draw_text(msg, black, -1, -1, 36);
-    } else if (state == Game::WON) {
+    } else if (state == GameState::WON) {
         context.clear_renderer(green);
         std::string msg = "You won!";
         context.draw_text(msg, black, -1, -1, 36);
@@ -119,16 +119,16 @@ void Game::render(void)
 
 void Game::key_press(void)
 {
-    if (state == Game::START) {
-        state = Game::PLAYING;
-    } else if (state == Game::LOST) {
+    if (state == GameState::START) {
+        state = GameState::PLAYING;
+    } else if (state == GameState::LOST) {
         context.quit_on_success(0);
     }
 }
 
 void Game::left_button_press(int32_t x, int32_t y)
 {
-    if (state == Game::START) {
+    if (state == GameState::START) {
         /* Render the pressed button for 200ms, minimally delaying the game.
          * Here, we rely on the fact that just one button can be clicked at a
          * time.
@@ -146,11 +146,11 @@ void Game::left_button_press(int32_t x, int32_t y)
 void Game::toggle_pause(void)
 {
     // pausing doesn't do much for most game states
-    if (state == Game::PLAYING)     state = Game::PAUSED;
-    else if (state == Game::PAUSED) state = Game::PLAYING;
+    if (state == GameState::PLAYING)     state = GameState::PAUSED;
+    else if (state == GameState::PAUSED) state = GameState::PLAYING;
 
     // render this message once when entering the pausing state
-    if (state == Game::PAUSED) {
+    if (state == GameState::PAUSED) {
         std::string msg = "The game is paused!";
         int w, h;
         if (TTF_SizeText(context.get_font(), msg.c_str(), &w, &h))
@@ -163,14 +163,14 @@ void Game::toggle_pause(void)
 
 void Game::update(void)
 {
-    if (state == Game::PAUSED) {
+    if (state == GameState::PAUSED) {
         return;
-    } else if (state == Game::START) {
+    } else if (state == GameState::START) {
         // nothing to update
-    } else if (state == Game::PLAYING) {
+    } else if (state == GameState::PLAYING) {
         ball.update();
         detect_ball_collision();
-    } else if (state == Game::LOST) {
+    } else if (state == GameState::LOST) {
         // nothing to update
     }
 }
@@ -189,7 +189,7 @@ void Game::detect_ball_collision(void)
 
     // collision/exit at bottom of screen
     if (ball_circ.get_y() + ball_radius >= screen_height) {
-        state = Game::LOST;
+        state = GameState::LOST;
         context.play_audio("./assets/sounds/lose_sound.wav");
         return;
     }
@@ -223,7 +223,7 @@ void Game::detect_ball_collision(void)
         if (ball.collides_with(block)) {
             if (!ball.update_on_collision(block)) {
                 blocks.erase(blocks.begin()+position);
-                if (++score >= winning_score) state = Game::WON;
+                if (++score >= winning_score) state = GameState::WON;
             }
             return;
         }
@@ -243,14 +243,14 @@ void Game::detect_ball_collision(void)
     }
 }
 
-void Game::update_x(Game::direction dir)
+void Game::update_x(Game::Direction dir)
 {
     // we don't want to update coordinates in most states
-    if (state != Game::PLAYING) return;
+    if (state != GameState::PLAYING) return;
 
     int32_t new_xpos  = player.get_xpos();
-    if (dir == Game::LEFT)       new_xpos -= xoffset;
-    else if (dir == Game::RIGHT) new_xpos += xoffset;
+    if (dir == Direction::LEFT)       new_xpos -= xoffset;
+    else if (dir == Direction::RIGHT) new_xpos += xoffset;
     else context.quit_on_error("unknown direction on x axis");
 
     int32_t win_width    = static_cast<int32_t>(context.get_width());
@@ -265,7 +265,7 @@ void Game::update_x(Game::direction dir)
 
 bool Game::is_still_running(void)
 {
-    if (state != Game::LOST) return true;
+    if (state != GameState::LOST) return true;
     return false;
 }
 
@@ -280,7 +280,7 @@ void Ball::update(void)
 
 bool Ball::collides_with(Player player)
 {
-    // use a squared hit box
+    // we use a squared hit box
     int32_t b_left = circle.get_x() - circle.get_width()/2;
     int32_t b_right = b_left + circle.get_width()/2;
     int32_t b_bottom = circle.get_y() + circle.get_width()/2;
@@ -360,4 +360,8 @@ bool Ball::update_on_collision(Block& block)
     return keep_block;
 }
 
-void Game::start(void) { if (state == Game::START) state = Game::PLAYING; }
+void Game::start(void)
+{
+    if (state == GameState::START)
+        state = GameState::PLAYING;
+}
